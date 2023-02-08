@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="fe75639c-9527-49e8-aabc-f3e6cedc7157" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="cd2d6fce-9da8-4824-bcbe-4d53454b6ee6" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="9876jinu##J" database="db" />
+	</db:config>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="b6838511-6e88-42c3-b908-03de1f71f0f1" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="9876jinu##J" database="db" />
+	</db:config>
+	<flow name="scat-gat-apiFlow" doc:id="4360c456-1e59-423c-8df1-0289c920a85f" >
+		<http:listener doc:name="Listener" doc:id="19a87a07-73d4-4b58-8975-fee0c0c0b5ba" config-ref="HTTP_Listener_config" path="/scater"/>
+		<logger level="INFO" doc:name="Logger" doc:id="607c1924-2cd8-4009-af47-fe53e39fe072" message="now () as string"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="fe72706d-06e8-4f4c-91fc-d27be6bd1965" >
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="7a4e07bc-d9b7-41af-aa7b-b4f850077254" url="https://api.openweathermap.org/data/2.5/weather">
+					<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"appid" : "1eed51bafcc3dd75b192ddafbf213229",
+	"q" : "chennai"
+}]]]></http:query-params>
+				</http:request>
+				<ee:transform doc:name="Transform Message" doc:id="c5647dce-e445-429a-a19f-b7b403352b01" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="c39a5796-adc4-42db-bd24-49eb4a1bd03a" message="weather"/>
+			</route>
+			<route >
+				<db:select doc:name="Select" doc:id="ad69a65e-fcef-43c0-b8e6-167ff595ebb7" config-ref="Database_Config1">
+					<db:sql ><![CDATA[select * from Employee;]]></db:sql>
+				</db:select>
+				<ee:transform doc:name="Transform Message" doc:id="01a5415b-1f6f-4f38-bd53-352cd00eb22c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="872df22d-4c36-4a05-88ae-970fb0a5ed97" message="data retrieve"/>
+			</route>
+		</scatter-gather>
+		<logger level="INFO" doc:name="Logger" doc:id="9f4aaba5-6ae9-4d7c-bcd5-2fe294151192" message="final"/>
+		<ee:transform doc:name="Transform Message" doc:id="f783e1e9-6bfc-4933-bd44-9ead8ea4ab61" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
